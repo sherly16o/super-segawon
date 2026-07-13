@@ -7,25 +7,30 @@
     <style>
         body {
             margin: 0;
-            background-color: #222;
+            background-color: #1a1a2e;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             color: white;
             font-family: 'Courier New', Courier, monospace;
+            user-select: none;
+        }
+        .game-container {
+            text-align: center;
         }
         canvas {
             border: 4px solid #fff;
-            background-color: #5c94fc; /* Warna langit khas retro */
+            background-color: #5c94fc; 
+            box-shadow: 0px 10px 20px rgba(0,0,0,0.5);
         }
     </style>
 </head>
 <body>
 
-    <div style="text-align: center;">
-        <h2>SUPER SEGAWON</h2>
-        <p>Gunakan Panah Kiri/Kanan untuk bergerak, Spasi untuk Lompat!</p>
+    <div class="game-container">
+        <h2>SUPER SEGAWON: THE LAST SEGO KUCING</h2>
+        <p>Panah Kiri/Kanan = Jalan | Spasi = Lompat | Enter = Mulai/Restart</p>
         <canvas id="gameCanvas" width="800" height="400"></canvas>
     </div>
 
@@ -33,8 +38,13 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-// Konfigurasi Karakter Segawon
-const segawon = {
+// State Game: 'START', 'PLAY', 'GAMEOVER', 'WIN'
+let gameState = 'START';
+let skor = 0;
+let nyawa = 3;
+
+// Karakter Segawon
+let segawon = {
     x: 50,
     y: 300,
     width: 40,
@@ -44,31 +54,65 @@ const segawon = {
     dy: 0,
     gravity: 0.6,
     jumpForce: -12,
-    isGrounded: false,
-    color: "#d2b48c" // Warna bulu anjing kampung krem
+    isGrounded: false
 };
 
-// Tanah/Platform
+// Platform Tanah
 const platforms = [
-    { x: 0, y: 360, width: 800, height: 40 },
-    { x: 200, y: 260, width: 150, height: 20 },
-    { x: 450, y: 180, width: 150, height: 20 }
+    { x: 0, y: 360, width: 800, height: 40 }, // Tanah bawah
+    { x: 180, y: 260, width: 140, height: 20 },
+    { x: 380, y: 180, width: 140, height: 20 },
+    { x: 600, y: 250, width: 120, height: 20 }
 ];
 
-// Item Sego Kucing
-let segoKucing = [
-    { x: 250, y: 220, width: 20, height: 20, collected: false },
-    { x: 500, y: 140, width: 20, height: 20, collected: false }
-];
+// Item Sego Kucing (Poin)
+let segoKucing = [];
 
-let skor = 0;
+// Musuh (Kroco Meong)
+let enemies = [];
+
+// Garis Finish (Warung Sego Kucing)
+const warung = { x: 720, y: 280, width: 60, height: 80 };
+
+// Reset Game ke kondisi awal
+function resetGame() {
+    skor = 0;
+    nyawa = 3;
+    segawon.x = 50;
+    segawon.y = 300;
+    segawon.dx = 0;
+    segawon.dy = 0;
+    
+    // Inisialisasi Ulang Item
+    segoKucing = [
+        { x: 220, y: 220, collected: false },
+        { x: 430, y: 140, collected: false },
+        { x: 650, y: 210, collected: false }
+    ];
+
+    // Inisialisasi Ulang Musuh
+    enemies = [
+        { x: 200, y: 240, width: 30, height: 20, speed: 1.5, minX: 180, maxX: 300 },
+        { x: 400, y: 340, width: 30, height: 20, speed: 2.5, minX: 300, maxX: 550 }
+    ];
+}
 
 // Input Keyboard
 const keys = {};
-document.addEventListener("keydown", (e) => keys[e.code] = true);
+document.addEventListener("keydown", (e) => {
+    keys[e.code] = true;
+    if (e.code === "Enter") {
+        if (gameState === 'START' || gameState === 'GAMEOVER' || gameState === 'WIN') {
+            resetGame();
+            gameState = 'PLAY';
+        }
+    }
+});
 document.addEventListener("keyup", (e) => keys[e.code] = false);
 
 function update() {
+    if (gameState !== 'PLAY') return;
+
     // Gerakan Horizontal
     if (keys["ArrowRight"]) segawon.dx = segawon.speed;
     else if (keys["ArrowLeft"]) segawon.dx = -segawon.speed;
@@ -80,18 +124,21 @@ function update() {
         segawon.isGrounded = false;
     }
 
-    // Terapkan Gravitasi
+    // Gravitasi
     segawon.dy += segawon.gravity;
-    
-    // Update Posisi
     segawon.x += segawon.dx;
     segawon.y += segawon.dy;
 
-    // Batasi agar tidak keluar layar kiri/kanan
+    // Batas Layar
     if (segawon.x < 0) segawon.x = 0;
     if (segawon.x + segawon.width > canvas.width) segawon.x = canvas.width - segawon.width;
+    
+    // Jika jatuh ke jurang (bila ada lubang, namun di sini tanah penuh. Tetap dipasang untuk pengaman)
+    if (segawon.y > canvas.height) {
+        kurangiNyawa();
+    }
 
-    // Deteksi Tabrakan dengan Platform
+    // Tabrakan Platform
     segawon.isGrounded = false;
     for (let plat of platforms) {
         if (segawon.x < plat.x + plat.width &&
@@ -105,33 +152,126 @@ function update() {
         }
     }
 
-    // Deteksi Ambil Sego Kucing
+    // Ambil Sego Kucing
     for (let sego of segoKucing) {
         if (!sego.collected &&
-            segawon.x < sego.x + sego.width &&
-            segawon.x + segawon.width > sego.x &&
-            segawon.y < sego.y + sego.height &&
-            segawon.y + segawon.height > sego.y) {
-            
+            segawon.x < sego.x + 20 && segawon.x + segawon.width > sego.x &&
+            segawon.y < sego.y + 20 && segawon.y + segawon.height > sego.y) {
             sego.collected = true;
             skor += 10;
         }
     }
+
+    // Pergerakan & Logika Musuh (Kucing)
+    for (let i = enemies.length - 1; i >= 0; i--) {
+        let enemy = enemies[i];
+        enemy.x += enemy.speed;
+
+        // Balik arah jika mentok batas patroli
+        if (enemy.x > enemy.maxX || enemy.x < enemy.minX) {
+            enemy.speed = -enemy.speed;
+        }
+
+        // Deteksi Tabrakan Segawon vs Kucing
+        if (segawon.x < enemy.x + enemy.width &&
+            segawon.x + segawon.width > enemy.x &&
+            segawon.y < enemy.y + enemy.height &&
+            segawon.y + segawon.height > enemy.y) {
+            
+            // Jika diinjak dari atas (Segawon sedang jatuh)
+            if (segawon.dy > 0 && segawon.y + segawon.height - segawon.dy <= enemy.y + 5) {
+                enemies.splice(i, 1); // Kucing mati
+                segawon.dy = segawon.jumpForce / 1.5; // Membalbal ke atas
+                skor += 25;
+            } else {
+                // Kena dari samping = Kurang Nyawa
+                kurangiNyawa();
+            }
+        }
+    }
+
+    // Cek Finish (Menang)
+    if (segawon.x < warung.x + warung.width &&
+        segawon.x + segawon.width > warung.x &&
+        segawon.y < warung.y + warung.height &&
+        segawon.y + segawon.height > warung.y) {
+        gameState = 'WIN';
+    }
+}
+
+function kurangiNyawa() {
+    nyawa--;
+    if (nyawa <= 0) {
+        gameState = 'GAMEOVER';
+    } else {
+        // Reset posisi sementara
+        segawon.x = 50;
+        segawon.y = 300;
+        segawon.dy = 0;
+    }
 }
 
 function draw() {
-    // Bersihkan layar
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Gambar Langit/Background (Diwakili warna canvas asli)
+    if (gameState === 'START') {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#fff";
+        ctx.font = "30px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("SUPER SEGAWON ADVENTURE", canvas.width/2, 160);
+        ctx.font = "20px Arial";
+        ctx.fillStyle = "#ffd700";
+        ctx.fillText("Tekan ENTER Untuk Memulai Petualangan", canvas.width/2, 230);
+        return;
+    }
 
-    // Gambar Tanah/Platform (Warna Hijau/Cokelat Rumput)
+    if (gameState === 'GAMEOVER') {
+        ctx.fillStyle = "rgba(139, 0, 0, 0.8)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#fff";
+        ctx.font = "40px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("GAME OVER", canvas.width/2, 180);
+        ctx.font = "20px Arial";
+        ctx.fillText("Tekan ENTER Untuk Mencoba Lagi", canvas.width/2, 240);
+        return;
+    }
+
+    if (gameState === 'WIN') {
+        ctx.fillStyle = "rgba(46, 139, 87, 0.9)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#fff";
+        ctx.font = "35px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("MISI BERHASIL! SEGO KUCING TERSELAMATKAN!", canvas.width/2, 160);
+        ctx.font = "25px Arial";
+        ctx.fillText("Total Skor Kamu: " + skor, canvas.width/2, 220);
+        ctx.font = "18px Arial";
+        ctx.fillText("Tekan ENTER Untuk Main Lagi", canvas.width/2, 280);
+        return;
+    }
+
+    // --- GAMEPLAY DRAWING ---
+    ctx.textAlign = "left";
+
+    // 1. Gambar Platform
     ctx.fillStyle = "#2e8b57";
     for (let plat of platforms) {
         ctx.fillRect(plat.x, plat.y, plat.width, plat.height);
     }
 
-    // Gambar Sego Kucing (Warna Segitiga Bungkus Daun Pisang)
+    // 2. Gambar Warung Finish
+    ctx.fillStyle = "#8b4513"; // Struktur warung cokelat
+    ctx.fillRect(warung.x, warung.y, warung.width, warung.height);
+    ctx.fillStyle = "#ff4500"; // Atap Tenda Warung
+    ctx.fillRect(warung.x - 5, warung.y, warung.width + 10, 15);
+    ctx.fillStyle = "#fff";
+    ctx.font = "10px Arial";
+    ctx.fillText("WARUNG", warung.x + 8, warung.y + 12);
+
+    // 3. Gambar Sego Kucing
     ctx.fillStyle = "#006400";
     for (let sego of segoKucing) {
         if (!sego.collected) {
@@ -144,20 +284,33 @@ function draw() {
         }
     }
 
-    // Gambar Karakter Segawon (Kotak representasi Anjing)
-    ctx.fillStyle = segawon.color;
-    ctx.fillRect(segawon.x, segawon.y, segawon.width, segawon.height);
-    
-    // Gambar Mata/Wajah Segawon sederhana biar lucu
-    ctx.fillStyle = "#000";
-    ctx.fillRect(segawon.x + 25, segawon.y + 10, 5, 5); // Mata
-    ctx.fillStyle = "#8b4513";
-    ctx.fillRect(segawon.x + 30, segawon.y + 18, 15, 10); // Moncong
+    // 4. Gambar Musuh (Kucing Oranye)
+    ctx.fillStyle = "#ff8c00"; // Oranye
+    for (let enemy of enemies) {
+        ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+        // Mata Kucing
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(enemy.speed > 0 ? enemy.x + 20 : enemy.x + 5, enemy.y + 4, 5, 5);
+        ctx.fillStyle = "#ff8c00"; 
+    }
 
-    // Tampilkan Skor
+    // 5. Gambar Segawon
+    ctx.fillStyle = "#d2b48c";
+    ctx.fillRect(segawon.x, segawon.y, segawon.width, segawon.height);
+    // Detail Muka Segawon
+    ctx.fillStyle = "#000";
+    ctx.fillRect(segawon.x + 28, segawon.y + 10, 5, 5); // Mata
+    ctx.fillStyle = "#8b4513";
+    ctx.fillRect(segawon.x + 32, segawon.y + 18, 12, 10); // Moncong
+
+    // 6. UI HUD (Skor & Nyawa)
     ctx.fillStyle = "#fff";
-    ctx.font = "20px Arial";
-    ctx.fillText("Sego Poin: " + skor, 20, 30);
+    ctx.font = "bold 18px Arial";
+    ctx.fillText("Sego Poin: " + skor, 20, 35);
+    
+    // Tampilan Nyawa berbentuk teks/simbol
+    ctx.fillStyle = "#ff4d4d";
+    ctx.fillText("Nyawa: " + "❤️".repeat(nyawa), 630, 35);
 }
 
 function gameLoop() {
@@ -166,7 +319,7 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
-// Jalankan Game
+// Jalankan putaran game
 gameLoop();
 </script>
 </body>
