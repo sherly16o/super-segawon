@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Segawon Adventure</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #222;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: white;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        canvas {
+            border: 4px solid #fff;
+            background-color: #5c94fc; /* Warna langit khas retro */
+        }
+    </style>
+</head>
+<body>
+
+    <div style="text-align: center;">
+        <h2>SUPER SEGAWON</h2>
+        <p>Gunakan Panah Kiri/Kanan untuk bergerak, Spasi untuk Lompat!</p>
+        <canvas id="gameCanvas" width="800" height="400"></canvas>
+    </div>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+// Konfigurasi Karakter Segawon
+const segawon = {
+    x: 50,
+    y: 300,
+    width: 40,
+    height: 40,
+    speed: 5,
+    dx: 0,
+    dy: 0,
+    gravity: 0.6,
+    jumpForce: -12,
+    isGrounded: false,
+    color: "#d2b48c" // Warna bulu anjing kampung krem
+};
+
+// Tanah/Platform
+const platforms = [
+    { x: 0, y: 360, width: 800, height: 40 },
+    { x: 200, y: 260, width: 150, height: 20 },
+    { x: 450, y: 180, width: 150, height: 20 }
+];
+
+// Item Sego Kucing
+let segoKucing = [
+    { x: 250, y: 220, width: 20, height: 20, collected: false },
+    { x: 500, y: 140, width: 20, height: 20, collected: false }
+];
+
+let skor = 0;
+
+// Input Keyboard
+const keys = {};
+document.addEventListener("keydown", (e) => keys[e.code] = true);
+document.addEventListener("keyup", (e) => keys[e.code] = false);
+
+function update() {
+    // Gerakan Horizontal
+    if (keys["ArrowRight"]) segawon.dx = segawon.speed;
+    else if (keys["ArrowLeft"]) segawon.dx = -segawon.speed;
+    else segawon.dx = 0;
+
+    // Lompat
+    if (keys["Space"] && segawon.isGrounded) {
+        segawon.dy = segawon.jumpForce;
+        segawon.isGrounded = false;
+    }
+
+    // Terapkan Gravitasi
+    segawon.dy += segawon.gravity;
+    
+    // Update Posisi
+    segawon.x += segawon.dx;
+    segawon.y += segawon.dy;
+
+    // Batasi agar tidak keluar layar kiri/kanan
+    if (segawon.x < 0) segawon.x = 0;
+    if (segawon.x + segawon.width > canvas.width) segawon.x = canvas.width - segawon.width;
+
+    // Deteksi Tabrakan dengan Platform
+    segawon.isGrounded = false;
+    for (let plat of platforms) {
+        if (segawon.x < plat.x + plat.width &&
+            segawon.x + segawon.width > plat.x &&
+            segawon.y + segawon.height <= plat.y + 10 &&
+            segawon.y + segawon.height + segawon.dy >= plat.y) {
+            
+            segawon.y = plat.y - segawon.height;
+            segawon.dy = 0;
+            segawon.isGrounded = true;
+        }
+    }
+
+    // Deteksi Ambil Sego Kucing
+    for (let sego of segoKucing) {
+        if (!sego.collected &&
+            segawon.x < sego.x + sego.width &&
+            segawon.x + segawon.width > sego.x &&
+            segawon.y < sego.y + sego.height &&
+            segawon.y + segawon.height > sego.y) {
+            
+            sego.collected = true;
+            skor += 10;
+        }
+    }
+}
+
+function draw() {
+    // Bersihkan layar
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Gambar Langit/Background (Diwakili warna canvas asli)
+
+    // Gambar Tanah/Platform (Warna Hijau/Cokelat Rumput)
+    ctx.fillStyle = "#2e8b57";
+    for (let plat of platforms) {
+        ctx.fillRect(plat.x, plat.y, plat.width, plat.height);
+    }
+
+    // Gambar Sego Kucing (Warna Segitiga Bungkus Daun Pisang)
+    ctx.fillStyle = "#006400";
+    for (let sego of segoKucing) {
+        if (!sego.collected) {
+            ctx.beginPath();
+            ctx.moveTo(sego.x + 10, sego.y);
+            ctx.lineTo(sego.x, sego.y + 20);
+            ctx.lineTo(sego.x + 20, sego.y + 20);
+            ctx.closePath();
+            ctx.fill();
+        }
+    }
+
+    // Gambar Karakter Segawon (Kotak representasi Anjing)
+    ctx.fillStyle = segawon.color;
+    ctx.fillRect(segawon.x, segawon.y, segawon.width, segawon.height);
+    
+    // Gambar Mata/Wajah Segawon sederhana biar lucu
+    ctx.fillStyle = "#000";
+    ctx.fillRect(segawon.x + 25, segawon.y + 10, 5, 5); // Mata
+    ctx.fillStyle = "#8b4513";
+    ctx.fillRect(segawon.x + 30, segawon.y + 18, 15, 10); // Moncong
+
+    // Tampilkan Skor
+    ctx.fillStyle = "#fff";
+    ctx.font = "20px Arial";
+    ctx.fillText("Sego Poin: " + skor, 20, 30);
+}
+
+function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+// Jalankan Game
+gameLoop();
+</script>
+</body>
+</html>
