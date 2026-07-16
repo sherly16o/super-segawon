@@ -1,370 +1,337 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Super Segawon Adventure</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background: #2c3e50;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            color: white;
-            overflow: hidden;
-        }
-        h1 {
-            margin: 5px 0;
-            font-size: 28px;
-            color: #f1c40f;
-            text-shadow: 2px 2px #d35400;
-        }
-        p {
-            margin: 5px 0 15px 0;
-            color: #bdc3c7;
-        }
-        #gameContainer {
-            position: relative;
-        }
-        canvas {
-            background: #34495e;
-            border: 4px solid #f1c40f;
-            border-radius: 8px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
-            display: block;
-        }
-        .controls {
-            margin-top: 15px;
-            background: rgba(0,0,0,0.4);
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-size: 14px;
-            text-align: center;
-            max-width: 400px;
-            border: 1px solid #7f8c8d;
-        }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Segawon Adventure</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #2c3e50;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            color: white;
+            overflow: hidden;
+        }
+        h1 {
+            margin: 5px 0;
+            font-size: 28px;
+            color: #f1c40f;
+            text-shadow: 2px 2px #d35400;
+        }
+        p {
+            margin: 5px 0 15px 0;
+            color: #bdc3c7;
+        }
+        #gameContainer {
+            position: relative;
+        }
+        canvas {
+            background: #34495e;
+            border: 4px solid #f1c40f;
+            border-radius: 8px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            display: block;
+        }
+        .controls {
+            margin-top: 15px;
+            background: rgba(0,0,0,0.4);
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            text-align: center;
+            max-width: 400px;
+            border: 1px solid #7f8c8d;
+        }
+    </style>
 </head>
 <body>
 
-    <h1>Super Segawon Adventure 🐕✨</h1>
-    <p>Bantu Segawon melompat, hindari rintangan, dan kumpulkan Tulang Emas!</p>
+    <h1>Super Segawon Adventure 🐕✨</h1>
+    <p>Bantu Segawon melompat, hindari rintangan, dan kumpulkan Tulang Emas!</p>
 
-    <div id="gameContainer">
-        <canvas id="gameCanvas" width="600" height="350"></canvas>
-    </div>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="600" height="350"></canvas>
+    </div>
 
-    <div class="controls">
-        <strong>Kontrol:</strong> Tekan <strong>Spasi</strong> atau <strong>Panah Atas (↑)</strong> untuk Melompat.<br>
-        Gonggongan Segawon akan otomatis aktif saat melompati rintangan!
-    </div>
+    <div class="controls">
+        <strong>Kontrol:</strong> Tekan <strong>Spasi</strong> atau <strong>Panah Atas (↑)</strong> untuk Melompat.<br>
+        Gonggongan Segawon akan otomatis aktif saat melompati rintangan!
+    </div>
 
-    <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
 
-        // --- MEMUAT LOGO/GAMBAR KE DALAM CANVAS ---
-        const logoPlayer = new Image();
-        logoPlayer.src = 'logosmk.jpeg'; // File gambar untuk Player
+        // --- MEMUAT LOGO/GAMBAR KE DALAM CANVAS ---
+        const logoPlayer = new Image();
+        logoPlayer.src = 'logosmk.jpeg'; // Gambar untuk Player
 
-        const logoObstacle = new Image();
-        logoObstacle.src = 'pakmk.jpeg'; // File gambar untuk Rintangan
+        const logoObstacle = new Image();
+        logoObstacle.src = 'pakmk.jpeg'; // Gambar untuk Rintangan
 
-        // Variabel penanda apakah gambar sudah selesai dimuat
-        let imagesLoaded = 0;
-        const totalImages = 2;
-        
-        function imageLoaded() {
-            imagesLoaded++;
-        }
-        
-        logoPlayer.onload = imageLoaded;
-        logoObstacle.onload = imageLoaded;
-        // ------------------------------------------
+        // Variabel penanda apakah gambar sudah selesai dimuat
+        let imagesLoaded = 0;
+        const totalImages = 2;
+        
+        function imageLoaded() {
+            imagesLoaded++;
+        }
+        
+        logoPlayer.onload = imageLoaded;
+        logoObstacle.onload = imageLoaded;
+        // ------------------------------------------
 
-        // Game State
-        let score = 0;
-        let currentLevel = 1;
-        let levelUpTimer = 0; 
-        let gameOver = false;
-        let gameStarted = false;
-        let frames = 0;
-        let gameSpeed = 4;
+        // Game State
+        let score = 0;
+        let currentLevel = 1;
+        let levelUpTimer = 0; 
+        let gameOver = false;
+        let gameStarted = false;
+        let frames = 0;
+        let gameSpeed = 4;
 
-        // Player (Segawon - Menggunakan Logo)
-        const segawon = {
-            x: 50,
-            y: 260,
-            width: 45,  
-            height: 45, 
-            gravity: 0.6,
-            lift: -12,
-            velocity: 0,
-            isJumping: false,
-            groundY: 260,
-            draw: function() {
-                if (imagesLoaded >= totalImages) {
-                    ctx.drawImage(logoPlayer, this.x, this.y, this.width, this.height);
-                } else {
-                    ctx.fillStyle = '#d35400';
-                    ctx.fillRect(this.x, this.y, this.width, this.height);
-                }
-            },
-            update: function() {
-                this.velocity += this.gravity;
-                this.y += this.velocity;
+        // Player (Segawon - Sekarang Menggunakan Logo)
+        const segawon = {
+            x: 50,
+            y: 260,
+            width: 45,  // Disesuaikan ukurannya agar pas
+            height: 45, // Diubah menjadi persegi agar logo proporsional
+            gravity: 0.6,
+            lift: -12,
+            velocity: 0,
+            isJumping: false,
+            groundY: 260,
+            draw: function() {
+                if (imagesLoaded >= totalImages) {
+                    // Menggambar logo SMKN 1 Sanden sebagai player
+                    ctx.drawImage(logoPlayer, this.x, this.y, this.width, this.height);
+                } else {
+                    // Fallback jika gambar gagal dimuat (kotak cokelat biasa)
+                    ctx.fillStyle = '#d35400';
+                    ctx.fillRect(this.x, this.y, this.width, this.height);
+                }
+            },
+            update: function() {
+                this.velocity += this.gravity;
+                this.y += this.velocity;
 
-                if (this.y >= this.groundY) {
-                    this.y = this.groundY;
-                    this.velocity = 0;
-                    this.isJumping = false;
-                }
-            },
-            jump: function() {
-                if (!this.isJumping) {
-                    this.velocity = this.lift;
-                    this.isJumping = true;
-                }
-            }
-        };
+                if (this.y >= this.groundY) {
+                    this.y = this.groundY;
+                    this.velocity = 0;
+                    this.isJumping = false;
+                }
+            },
+            jump: function() {
+                if (!this.isJumping) {
+                    this.velocity = this.lift;
+                    this.isJumping = true;
+                }
+            }
+        };
 
-        // Rintangan & Item
-        let obstacles = [];
-        let bones = [];
+        // Rintangan (Sekarang Menggunakan Logo MOKO) & Item (Tulang Emas)
+        let obstacles = [];
+        let bones = [];
 
-        class Obstacle {
-            constructor() {
-                this.x = canvas.width + 20;
-                this.width = 40;
-                this.height = 40;
-                this.y = canvas.height - 50 - this.height;
-                this.speed = gameSpeed;
-            }
-            draw() {
-                if (imagesLoaded >= totalImages) {
-                    ctx.drawImage(logoObstacle, this.x, this.y, this.width, this.height);
-                } else {
-                    ctx.fillStyle = '#f39c12'; 
-                    ctx.fillRect(this.x, this.y, this.width, this.height);
-                }
-            }
-            update() {
-                this.x -= this.speed;
-            }
-        }
+        class Obstacle {
+            constructor() {
+                this.x = canvas.width + 20;
+                this.width = 40;
+                this.height = 40;
+                this.y = canvas.height - 50 - this.height;
+                this.speed = gameSpeed;
+            }
+            draw() {
+                if (imagesLoaded >= totalImages) {
+                    // Menggambar logo MOKO sebagai rintangan
+                    ctx.drawImage(logoObstacle, this.x, this.y, this.width, this.height);
+                } else {
+                    // Fallback jika gambar gagal dimuat (kotak oranye biasa)
+                    ctx.fillStyle = '#f39c12'; 
+                    ctx.fillRect(this.x, this.y, this.width, this.height);
+                }
+            }
+            update() {
+                this.x -= this.speed;
+            }
+        }
 
-        class Bone {
-            constructor() {
-                this.x = canvas.width + 50;
-                this.y = 150 + Math.random() * 80;
-                this.width = 25;
-                this.height = 12;
-                this.speed = gameSpeed;
-            }
-            draw() {
-                ctx.fillStyle = '#f1c40f'; 
-                ctx.fillRect(this.x + 4, this.y + 3, this.width - 8, this.height - 6);
-                ctx.beginPath();
-                ctx.arc(this.x + 4, this.y + 3, 4, 0, Math.PI * 2);
-                ctx.arc(this.x + 4, this.y + 9, 4, 0, Math.PI * 2);
-                ctx.arc(this.x + this.width - 4, this.y + 3, 4, 0, Math.PI * 2);
-                ctx.arc(this.x + this.width - 4, this.y + 9, 4, 0, Math.PI * 2);
-                ctx.fill();
-            }
-            update() {
-                this.x -= this.speed;
-            }
-        }
+        class Bone {
+            constructor() {
+                this.x = canvas.width + 50;
+                this.y = 150 + Math.random() * 80;
+                this.width = 25;
+                this.height = 12;
+                this.speed = gameSpeed;
+            }
+            draw() {
+                ctx.fillStyle = '#f1c40f'; 
+                ctx.fillRect(this.x + 4, this.y + 3, this.width - 8, this.height - 6);
+                ctx.beginPath();
+                ctx.arc(this.x + 4, this.y + 3, 4, 0, Math.PI * 2);
+                ctx.arc(this.x + 4, this.y + 9, 4, 0, Math.PI * 2);
+                ctx.arc(this.x + this.width - 4, this.y + 3, 4, 0, Math.PI * 2);
+                ctx.arc(this.x + this.width - 4, this.y + 9, 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            update() {
+                this.x -= this.speed;
+            }
+        }
 
-        // Input Handler
-        window.addEventListener('keydown', function(e) {
-            if (e.code === 'Space' || e.code === 'ArrowUp') {
-                e.preventDefault();
-                if (!gameStarted) {
-                    gameStarted = true;
-                } else if (gameOver) {
-                    resetGame();
-                } else {
-                    segawon.jump();
-                }
-            }
-        });
+        // Input Handler
+        window.addEventListener('keydown', function(e) {
+            if (e.code === 'Space' || e.code === 'ArrowUp') {
+                e.preventDefault();
+                if (!gameStarted) {
+                    gameStarted = true;
+                } else if (gameOver) {
+                    resetGame();
+                } else {
+                    segawon.jump();
+                }
+            }
+        });
 
-        canvas.addEventListener('touchstart', function(e) {
-            e.preventDefault();
-            if (!gameStarted) {
-                gameStarted = true;
-            } else if (gameOver) {
-                resetGame();
-            } else {
-                segawon.jump();
-            }
-        });
+        canvas.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            if (!gameStarted) {
+                gameStarted = true;
+            } else if (gameOver) {
+                resetGame();
+            } else {
+                segawon.jump();
+            }
+        });
 
-        function resetGame() {
-            score = 0;
-            currentLevel = 1;
-            levelUpTimer = 0;
-            gameOver = false;
-            frames = 0;
-            gameSpeed = 4;
-            obstacles = [];
-            bones = [];
-            segawon.y = segawon.groundY;
-            segawon.velocity = 0;
-        }
+        function resetGame() {
+            score = 0;
+            currentLevel = 1;
+            levelUpTimer = 0;
+            gameOver = false;
+            frames = 0;
+            gameSpeed = 4;
+            obstacles = [];
+            bones = [];
+            segawon.y = segawon.groundY;
+            segawon.velocity = 0;
+        }
 
-        function spawnManager() {
-            let spawnInterval = Math.max(60, 120 - (currentLevel * 10));
-            
-            if (frames % Math.floor(spawnInterval) === 0) {
-                obstacles.push(new Obstacle());
-            }
-            if (frames % 170 === 0) {
-                bones.push(new Bone());
-            }
-        }
+        function spawnManager() {
+            let spawnInterval = Math.max(60, 120 - (currentLevel * 10));
+            
+            if (frames % Math.floor(spawnInterval) === 0) {
+                obstacles.push(new Obstacle());
+            }
+            if (frames % 170 === 0) {
+                bones.push(new Bone());
+            }
+        }
 
-        function checkCollision(rect1, rect2) {
-            return rect1.x < rect2.x + rect2.width &&
-                   rect1.x + rect1.width > rect2.x &&
-                   rect1.y < rect2.y + rect2.height &&
-                   rect1.y + rect1.height > rect2.y;
-        }
+        function checkCollision(rect1, rect2) {
+            return rect1.x < rect2.x + rect2.width &&
+                   rect1.x + rect1.width > rect2.x &&
+                   rect1.y < rect2.y + rect2.height &&
+                   rect1.y + rect1.height > rect2.y;
+        }
 
-        function update() {
-            if (!gameStarted || gameOver) return;
+        function update() {
+            if (!gameStarted || gameOver) return;
 
-            frames++;
+            frames++;
 
-            let calculatedLevel = Math.floor(score / 100) + 1;
-            if (calculatedLevel > currentLevel) {
-                currentLevel = calculatedLevel;
-                gameSpeed += 0.8; 
-                levelUpTimer = 90; 
-            }
+            let calculatedLevel = Math.floor(score / 100) + 1;
+            if (calculatedLevel > currentLevel) {
+                currentLevel = calculatedLevel;
+                gameSpeed += 0.8; 
+                levelUpTimer = 90; 
+            }
 
-            if (levelUpTimer > 0) levelUpTimer--;
+            if (levelUpTimer > 0) levelUpTimer--;
 
-            segawon.update();
-            spawnManager();
+            segawon.update();
+            spawnManager();
 
-            // Loop Rintangan
-            for (let i = obstacles.length - 1; i >= 0; i--) {
-                obstacles[i].update();
-                
-                if (checkCollision(segawon, obstacles[i])) {
-                    gameOver = true;
-                }
+            // Rintangan Loop
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                obstacles[i].update();
+                
+                if (checkCollision(segawon, obstacles[i])) {
+                    gameOver = true;
+                }
 
-                if (obstacles[i].x + obstacles[i].width < 0) {
-                    obstacles.splice(i, 1);
-                    score += 5; 
-                }
-            }
+                if (obstacles[i].x + obstacles[i].width < 0) {
+                    obstacles.splice(i, 1);
+                    score += 5; 
+                }
+            }
 
-            // Loop Tulang Emas
-            for (let i = bones.length - 1; i >= 0; i--) {
-                bones[i].update();
+            // Tulang Emas Loop
+            for (let i = bones.length - 1; i >= 0; i--) {
+                bones[i].update();
 
-                if (checkCollision(segawon, bones[i])) {
-                    score += 20; 
-                    bones.splice(i, 1);
-                    continue;
-                }
+                if (checkCollision(segawon, bones[i])) {
+                    score += 20; 
+                    bones.splice(i, 1);
+                    continue;
+                }
 
-                if (bones[i].x + bones[i].width < 0) {
-                    bones.splice(i, 1);
-                }
-            }
-        }
+                if (bones[i].x + bones[i].width < 0) {
+                    bones.splice(i, 1);
+                }
+            }
+        }
 
-        function draw() {
-            // Background Langit
-            ctx.fillStyle = '#34495e';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        function draw() {
+            // Background Langit
+            ctx.fillStyle = '#34495e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Awan Dekorasi
-            ctx.fillStyle = '#5d6d7e';
-            ctx.beginPath();
-            ctx.arc(100, 80, 20, 0, Math.PI * 2);
-            ctx.arc(130, 70, 25, 0, Math.PI * 2);
-            ctx.arc(160, 80, 20, 0, Math.PI * 2);
-            ctx.fill();
+            // Awan Dekorasi
+            ctx.fillStyle = '#5d6d7e';
+            ctx.beginPath();
+            ctx.arc(100, 80, 20, 0, Math.PI * 2);
+            ctx.arc(130, 70, 25, 0, Math.PI * 2);
+            ctx.arc(160, 80, 20, 0, Math.PI * 2);
+            ctx.fill();
 
-            // Tanah
-            ctx.fillStyle = '#27ae60';
-            ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
-            ctx.fillStyle = '#219a52';
-            ctx.fillRect(0, canvas.height - 50, canvas.width, 5);
+            // Tanah
+            ctx.fillStyle = '#27ae60';
+            ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
+            ctx.fillStyle = '#219a52';
+            ctx.fillRect(0, canvas.height - 50, canvas.width, 5);
 
-            // Objek Game
-            segawon.draw();
-            obstacles.forEach(obs => obs.draw());
-            bones.forEach(bone => bone.draw());
+            // Objek Game
+            segawon.draw();
+            obstacles.forEach(obs => obs.draw());
+            bones.forEach(bone => bone.draw());
 
-            // Teks Skor & Level
-            ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 18px Arial';
-            ctx.textAlign = 'left';
-            ctx.fillText(`Skor: ${score}`, 20, 35);
-            
-            ctx.fillStyle = '#f1c40f';
-            ctx.fillText(`Level: ${currentLevel}`, canvas.width - 100, 35);
+            // Teks Skor & Level
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 18px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText(`Skor: ${score}`, 20, 35);
+            
+            ctx.fillStyle = '#f1c40f';
+            ctx.fillText(`Level: ${currentLevel}`, canvas.width - 100, 35);
 
-            // Notifikasi Level Up
-            if (levelUpTimer > 0 && !gameOver) {
-                ctx.fillStyle = '#f1c40f';
-                ctx.font = 'bold 30px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(`LEVEL UP! 🔥`, canvas.width / 2, 100);
-            }
+            // Animasi / Teks Pemberitahuan Level Up
+            if (levelUpTimer > 0 && !gameOver) {
+                ctx.fillStyle = '#f1c40f';
+                ctx.font = 'bold 30px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(`LEVEL UP! 🔥`, canvas.width / 2, 100);
+            }
 
-            // Halaman Start Menu
-            if (!gameStarted) {
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#f1c40f';
-                ctx.font = 'bold 22px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('Tekan SPASI / SENTUH Layar untuk Mulai', canvas.width / 2, canvas.height / 2);
-            }
-
-            // Halaman Game Over
-            if (gameOver) {
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
-                ctx.fillStyle = '#e74c3c';
-                ctx.font = 'bold 26px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('SEGAWON TABRAKAN! 💥 🐾', canvas.width / 2, canvas.height / 2 - 40);
-                
-                ctx.fillStyle = '#ffffff';
-                ctx.font = '16px Arial';
-                ctx.fillText(`Level Terakhir: ${currentLevel}`, canvas.width / 2, canvas.height / 2);
-                ctx.fillText(`Total Skor Kamu: ${score}`, canvas.width / 2, canvas.height / 2 + 25);
-                
-                ctx.fillStyle = '#bdc3c7';
-                ctx.font = '14px Arial';
-                ctx.fillText('Tekan SPASI / SENTUH Layar untuk Main Lagi', canvas.width / 2, canvas.height / 2 + 65);
-            }
-        }
-
-        // Fungsi Perulangan Utama Game
-        function gameLoop() {
-            update();
-            draw();
-            requestAnimationFrame(gameLoop);
-        }
-
-        // Menjalankan Game
-        gameLoop();
-    </script>
-</body>
-</html>
+            // Halaman Menu Mulai
+            if (!gameStarted) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#f1c40f';
+                ctx.font = 'bold
