@@ -70,6 +70,8 @@
 
         // Game State
         let score = 0;
+        let currentLevel = 1;
+        let levelUpTimer = 0; // Untuk memunculkan teks "Level Up" sementara
         let gameOver = false;
         let gameStarted = false;
         let frames = 0;
@@ -218,6 +220,8 @@
 
         function resetGame() {
             score = 0;
+            currentLevel = 1;
+            levelUpTimer = 0;
             gameOver = false;
             frames = 0;
             gameSpeed = 4;
@@ -228,7 +232,10 @@
         }
 
         function spawnManager() {
-            if (frames % 120 === 0) {
+            // Jarak spawn rintangan sedikit dipercepat/disesuaikan seiring kenaikan gameSpeed
+            let spawnInterval = Math.max(60, 120 - (currentLevel * 10));
+            
+            if (frames % Math.floor(spawnInterval) === 0) {
                 obstacles.push(new Obstacle());
             }
             if (frames % 170 === 0) {
@@ -247,10 +254,16 @@
             if (!gameStarted || gameOver) return;
 
             frames++;
-            
-            if (frames % 500 === 0) {
-                gameSpeed += 0.5;
+
+            // Sistem Kenaikan Level (Setiap kelipatan 100 Skor)
+            let calculatedLevel = Math.floor(score / 100) + 1;
+            if (calculatedLevel > currentLevel) {
+                currentLevel = calculatedLevel;
+                gameSpeed += 0.8; // Menambah kecepatan setiap naik level
+                levelUpTimer = 90; // Durasi teks Level Up muncul (~1.5 detik)
             }
+
+            if (levelUpTimer > 0) levelUpTimer--;
 
             segawon.update();
             spawnManager();
@@ -309,11 +322,22 @@
             obstacles.forEach(obs => obs.draw());
             bones.forEach(bone => bone.draw());
 
-            // Teks Skor
+            // Teks Skor & Level
             ctx.fillStyle = '#ffffff';
             ctx.font = 'bold 18px Arial';
             ctx.textAlign = 'left';
             ctx.fillText(`Skor: ${score}`, 20, 35);
+            
+            ctx.fillStyle = '#f1c40f';
+            ctx.fillText(`Level: ${currentLevel}`, canvas.width - 100, 35);
+
+            // Animasi / Teks Pemberitahuan Level Up
+            if (levelUpTimer > 0 && !gameOver) {
+                ctx.fillStyle = '#f1c40f';
+                ctx.font = 'bold 30px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(`LEVEL UP! 🔥`, canvas.width / 2, 100);
+            }
 
             // Halaman Menu Mulai
             if (!gameStarted) {
@@ -335,11 +359,12 @@
                 ctx.fillStyle = '#e74c3c';
                 ctx.font = 'bold 32px Arial';
                 ctx.textAlign = 'center';
-                ctx.fillText('SEGAWON TABRAKAN! 💥🐾', canvas.width / 2, canvas.height / 2 - 20);
+                ctx.fillText('SEGAWON TABRAKAN! 💥🐾', canvas.width / 2, canvas.height / 2 - 40);
                 ctx.fillStyle = '#ffffff';
                 ctx.font = '16px Arial';
-                ctx.fillText(`Total Skor Kamu: ${score}`, canvas.width / 2, canvas.height / 2 + 15);
-                ctx.fillText('Tekan SPASI / SENTUH Layar untuk Main Lagi', canvas.width / 2, canvas.height / 2 + 45);
+                ctx.fillText(`Level Terakhir: ${currentLevel}`, canvas.width / 2, canvas.height / 2);
+                ctx.fillText(`Total Skor Kamu: ${score}`, canvas.width / 2, canvas.height / 2 + 25);
+                ctx.fillText('Tekan SPASI / SENTUH Layar untuk Main Lagi', canvas.width / 2, canvas.height / 2 + 60);
             }
         }
 
