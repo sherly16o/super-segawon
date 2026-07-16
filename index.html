@@ -70,10 +70,10 @@
 
         // --- MEMUAT LOGO/GAMBAR KE DALAM CANVAS ---
         const logoPlayer = new Image();
-        logoPlayer.src = 'logosmk.jpeg'; // Gambar untuk Player
+        logoPlayer.src = 'logosmk.jpeg'; // File gambar untuk Player
 
         const logoObstacle = new Image();
-        logoObstacle.src = 'pakmk.jpeg'; // Gambar untuk Rintangan
+        logoObstacle.src = 'pakmk.jpeg'; // File gambar untuk Rintangan
 
         // Variabel penanda apakah gambar sudah selesai dimuat
         let imagesLoaded = 0;
@@ -96,12 +96,12 @@
         let frames = 0;
         let gameSpeed = 4;
 
-        // Player (Segawon - Sekarang Menggunakan Logo)
+        // Player (Segawon - Menggunakan Logo)
         const segawon = {
             x: 50,
             y: 260,
-            width: 45,  // Disesuaikan ukurannya agar pas
-            height: 45, // Diubah menjadi persegi agar logo proporsional
+            width: 45,  
+            height: 45, 
             gravity: 0.6,
             lift: -12,
             velocity: 0,
@@ -109,10 +109,8 @@
             groundY: 260,
             draw: function() {
                 if (imagesLoaded >= totalImages) {
-                    // Menggambar logo SMKN 1 Sanden sebagai player
                     ctx.drawImage(logoPlayer, this.x, this.y, this.width, this.height);
                 } else {
-                    // Fallback jika gambar gagal dimuat (kotak cokelat biasa)
                     ctx.fillStyle = '#d35400';
                     ctx.fillRect(this.x, this.y, this.width, this.height);
                 }
@@ -135,7 +133,7 @@
             }
         };
 
-        // Rintangan (Sekarang Menggunakan Logo MOKO) & Item (Tulang Emas)
+        // Rintangan & Item
         let obstacles = [];
         let bones = [];
 
@@ -149,10 +147,8 @@
             }
             draw() {
                 if (imagesLoaded >= totalImages) {
-                    // Menggambar logo MOKO sebagai rintangan
                     ctx.drawImage(logoObstacle, this.x, this.y, this.width, this.height);
                 } else {
-                    // Fallback jika gambar gagal dimuat (kotak oranye biasa)
                     ctx.fillStyle = '#f39c12'; 
                     ctx.fillRect(this.x, this.y, this.width, this.height);
                 }
@@ -258,7 +254,7 @@
             segawon.update();
             spawnManager();
 
-            // Rintangan Loop
+            // Loop Rintangan
             for (let i = obstacles.length - 1; i >= 0; i--) {
                 obstacles[i].update();
                 
@@ -272,7 +268,7 @@
                 }
             }
 
-            // Tulang Emas Loop
+            // Loop Tulang Emas
             for (let i = bones.length - 1; i >= 0; i--) {
                 bones[i].update();
 
@@ -321,7 +317,7 @@
             ctx.fillStyle = '#f1c40f';
             ctx.fillText(`Level: ${currentLevel}`, canvas.width - 100, 35);
 
-            // Animasi / Teks Pemberitahuan Level Up
+            // Notifikasi Level Up
             if (levelUpTimer > 0 && !gameOver) {
                 ctx.fillStyle = '#f1c40f';
                 ctx.font = 'bold 30px Arial';
@@ -329,9 +325,46 @@
                 ctx.fillText(`LEVEL UP! 🔥`, canvas.width / 2, 100);
             }
 
-            // Halaman Menu Mulai
+            // Halaman Start Menu
             if (!gameStarted) {
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.fillStyle = '#f1c40f';
-                ctx.font = 'bold
+                ctx.font = 'bold 22px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Tekan SPASI / SENTUH Layar untuk Mulai', canvas.width / 2, canvas.height / 2);
+            }
+
+            // Halaman Game Over
+            if (gameOver) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.fillStyle = '#e74c3c';
+                ctx.font = 'bold 26px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('SEGAWON TABRAKAN! 💥 🐾', canvas.width / 2, canvas.height / 2 - 40);
+                
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '16px Arial';
+                ctx.fillText(`Level Terakhir: ${currentLevel}`, canvas.width / 2, canvas.height / 2);
+                ctx.fillText(`Total Skor Kamu: ${score}`, canvas.width / 2, canvas.height / 2 + 25);
+                
+                ctx.fillStyle = '#bdc3c7';
+                ctx.font = '14px Arial';
+                ctx.fillText('Tekan SPASI / SENTUH Layar untuk Main Lagi', canvas.width / 2, canvas.height / 2 + 65);
+            }
+        }
+
+        // Fungsi Perulangan Utama Game
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Menjalankan Game
+        gameLoop();
+    </script>
+</body>
+</html>
